@@ -56,6 +56,19 @@ putchar:
 	pop bx
 	ret
 
+putstr:
+	push bx
+	mov bx, ax
+putstr_loop:
+	mov al, BYTE [bx]
+	call putchar
+	inc bx
+	cmp BYTE [bx], 0x00
+	jne putstr_loop
+	call new_line
+	pop bx
+	ret
+
 print_reg:
 	push bx
 	push cx
@@ -134,18 +147,20 @@ duplicate_key_loop:
 duplicate_key_loop2:
 	mov al, BYTE [es:KEY_OFFSET + bx]
 	mov di, cx
-	shl di, 4					; mult di by KEY_SIZE
+	shl di, 4
 	mov BYTE [es:bx + di + KEY_OFFSET], al
 	inc bl
 	cmp bl, KEY_SIZE
 	jne duplicate_key_loop2
 	loop duplicate_key_loop
 	ret
-	
+
 start:
 	init_mem
 	init_screen
 	memset_key
+	mov ax, MSG_WELCOME
+	call putstr
 	call read_input
 	call duplicate_key
 	call dump_mbr
@@ -156,25 +171,21 @@ start:
 ERROR:
 	mov ah, al
 	call print_reg
-	mov al, 'E'
-	call putchar
-	mov al, 'R'
-	call putchar
-	mov al,	'R'
-	call putchar
-	call new_line
+	mov ax, MSG_ERROR
+	call putstr
 	jmp END
 
-FINISHED:	
-	mov al, 'O'
-	call putchar
-	mov al, 'K'
-	call putchar
-	call new_line
+FINISHED:
+	mov ax, MSG_SUCCESS
+	call putstr
 	jmp END
 
 END:
 	jmp END
+
+	MSG_WELCOME: db "Please enter your password to lock/unlock your key:", 0
+	MSG_ERROR: db "An Error occured.", 0
+	MSG_SUCCESS: db "Key successfully locked/unlocked.", 0
 
 	TIMES 510-($-$$) DB 0
 	SIGNATURE DW 0xAA55
