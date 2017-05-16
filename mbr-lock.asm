@@ -25,6 +25,8 @@
 %endmacro
 
 %macro init_mem 0
+	xor ax, ax
+	mov ds, ax
 	mov ax, 0x0100
 	mov ss, ax
 	mov ax, DATA_SEGMENT
@@ -57,16 +59,18 @@ putchar:
 	ret
 
 putstr:
-	push bx
-	mov bx, ax
+	push si
+	mov si, ax
+	cld
 putstr_loop:
-	mov al, BYTE [bx]
+	lodsb
+	cmp al, 0x00
+	je putstr_end
 	call putchar
-	inc bx
-	cmp BYTE [bx], 0x00
-	jne putstr_loop
+	jmp putstr_loop
+putstr_end:
 	call new_line
-	pop bx
+	pop si
 	ret
 
 print_reg:
